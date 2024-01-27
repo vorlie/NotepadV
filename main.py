@@ -128,15 +128,12 @@ menu_bar = tk.Menu(root)
 file_menu = tk.Menu(menu_bar, tearoff=0)
 recent_menu = tk.Menu(file_menu, tearoff=0)
 
-if len(sys.argv) > 1:  # Check if command-line arguments were provided
-    file_path = sys.argv[1]  # Interpret the first command-line argument as the file path
+if len(sys.argv) > 1: 
+    file_path = sys.argv[1] 
     with open(file_path, 'r') as file:
-        file_content = file.read()  # Read the content of the file
-    # Display the content of the file within your application
-    # For example, you can set the content of a text widget or display it in a suitable way
-    # Example:
-    text_area.insert('1.0', file_content)  # Assuming 'text_widget' is a Tkinter Text widget
-    root.title(f"Notepad by Vorlie - {file_path}")  # Update the window title to include the full file path
+        file_content = file.read() 
+    text_area.insert('1.0', file_content)
+    root.title(f"Notepad by Vorlie - {file_path}") 
 
 # Load recent files from JSON
 try:
