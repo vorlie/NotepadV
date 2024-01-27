@@ -52,7 +52,6 @@ def save_file(event=None, file_path=None):
                 file_content = text_area.get("1.0", "end-1c")
                 file.write(file_content)
             update_recent_files(file_path)
-
         else:
             save_as_file()
     else:  # If the function was called without an event, use the provided file_path
