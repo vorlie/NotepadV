@@ -10,6 +10,6 @@ Project created for fun due to my boredom. I won't be updating it that much sinc
 - New Document
 - Open Document
 - Dark Mode
- - Also checks if the system has dark mode or light mode.
+  - Also checks if the system has dark mode or light mode.
 - Recent Documents
 - Zoom in and out
