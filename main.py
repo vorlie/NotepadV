@@ -32,7 +32,6 @@ def open_recent_file(file_path):
     try:
         with open(file_path, 'r') as file:
             file_content = file.read()
-            # Add your code to display the file content in the text area
             text_area.delete(1.0, "end") # Clear the text area
             text_area.insert("end", file_content) # Insert the file content into the text area
             current_file = file_path
