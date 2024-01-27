@@ -6,13 +6,14 @@ import tkinter as tk
 import tkinter.messagebox as messagebox
 from tkinter import filedialog
 from tkinter import font
+from winreg import ConnectRegistry, HKEY_CURRENT_USER, OpenKey, QueryValueEx
+from plyer import notification
 
-
-
+# Global variables
+current_font_size = 12
 recent_files_list = []
 current_file = ""
-
-# Get the path to the user's data directory
+icon_path = os.path.join(os.path.dirname(__file__), "icont.ico")
 app_data_dir = appdirs.user_data_dir(appname='NotepadV', appauthor='vorlie')
 os.makedirs(app_data_dir, exist_ok=True)
 
@@ -22,9 +23,7 @@ def update_recent_files(file_path):
     if file_path in recent_files_list:
         recent_files_list.remove(file_path)
     recent_files_list.insert(0, file_path)
-    # Limit the list to 10 recent files
-    recent_files_list = recent_files_list[:10]
-    # Save recent files list to a JSON file
+    recent_files_list = recent_files_list[:15]
     recent_files_path = os.path.join(app_data_dir, 'recent_files.json')
     with open(recent_files_path, 'w') as file:
         json.dump(recent_files_list, file)
@@ -35,11 +34,12 @@ def open_recent_file(file_path):
     try:
         with open(file_path, 'r') as file:
             file_content = file.read()
-            text_area.delete(1.0, "end") # Clear the text area
-            text_area.insert("end", file_content) # Insert the file content into the text area
+            text_area.delete(1.0, "end") 
+            text_area.insert("end", file_content)
             current_file = file_path
-            root.title(f"Notepad by Vorlie - {file_path}")  # Update the window title to include the full file path
-            update_recent_files(file_path) # Update the recent files list
+            root.title(f"Notepad by Vorlie - {file_path}")  
+            update_recent_files(file_path)
+            #print("DEBUG: Opened recent file:", file_path, current_file)
     except FileNotFoundError:
         messagebox.showerror("File Not Found", f"File {file_path} not found")
 
@@ -51,6 +51,8 @@ def save_file(event=None, file_path=None):
             with open(current_file, 'w') as file:
                 file_content = text_area.get("1.0", "end-1c")
                 file.write(file_content)
+            update_recent_files(file_path)
+
         else:
             save_as_file()
     else:  # If the function was called without an event, use the provided file_path
@@ -58,6 +60,7 @@ def save_file(event=None, file_path=None):
             with open(file_path, 'w') as file:
                 file_content = text_area.get("1.0", "end-1c")
                 file.write(file_content)
+            update_recent_files(file_path)
         else:
             save_as_file()
 
@@ -73,29 +76,44 @@ def save_as_file():
 
 # Function to open a file
 def open_file():
-    global current_file  # Declare current_file as a global variable
+    global current_file 
     file_path = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
     if file_path:
-        current_file = file_path  # Store the file path in the current_file variable
-        root.title(f"Notepad by Vorlie - {file_path}")  # Set the window title to display the file path
+        current_file = file_path 
+        root.title(f"Notepad by Vorlie - {file_path}") 
         update_recent_files(file_path)
         with open(file_path, 'r') as file:
             text = file.read()
             text_area.delete("1.0", "end")
             text_area.insert("1.0", text)
 
-
-current_font_size = 12
 # Function to zoom in and out
 def zoom_in():
     global current_font_size
     text_area.configure(font=(default_font.actual("family"), current_font_size, "normal"))
     current_font_size += 2
-
 def zoom_out():
     global current_font_size
     text_area.configure(font=(default_font.actual("family"), current_font_size, "normal"))
     current_font_size -= 2
+
+# Function to check if dark mode is enabled in the system
+def is_dark_mode_enabled():
+    try:
+        key = OpenKey(ConnectRegistry(None, HKEY_CURRENT_USER), r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize")
+        value, _ = QueryValueEx(key, "AppsUseLightTheme")
+        return value == 0
+    except Exception as e:
+        print("Error:", e)
+        return False
+
+# Function to apply dark mode or light mode based on system setting
+def apply_system_theme(text_area):
+    if is_dark_mode_enabled():
+        text_area.configure(bg="gray20", fg="white")
+    else:
+        text_area.configure(bg="white", fg="black")
+
 # Function to toggle dark mode
 def toggle_dark_mode():
     global dark_mode_enabled
@@ -105,6 +123,7 @@ def toggle_dark_mode():
     else:
         text_area.configure(bg="gray20", fg="white")
         dark_mode_enabled = True
+
 # Function to create a new document
 def create_new_document():
     text_area.delete(1.0, "end")  
@@ -112,33 +131,47 @@ def create_new_document():
     global current_file
     current_file = None 
 
+# Function to automatically save the file
+def auto_save(text_area, current_file):
+    if current_file:
+        content = text_area.get("1.0", "end-1c") 
+        with open(current_file, "w") as file:
+            file.write(content)
+            notification.notify(
+                        title='Auto-Save',
+                        message='Document auto-saved successfully',
+                        app_name='NotepadV',
+                        app_icon=icon_path)
+            #print(f"DEBUG: Auto-saved {current_file}")
+
 # Create the main window
 root = tk.Tk()
 root.title("Notepad by Vorlie - Untitled")
 root.geometry("800x600")
-icon_path = os.path.join(os.path.dirname(__file__), "icont.ico")
 root.iconbitmap(icon_path)
-# Create the text area
 default_font = font.Font(family="Montserrat", size=12)
 dark_mode_enabled = False
 text_area = tk.Text(root, wrap="word", font=default_font)
 text_area.pack(fill="both", expand=True)
-# Create the menu bar
+apply_system_theme(text_area)
 menu_bar = tk.Menu(root)
 file_menu = tk.Menu(menu_bar, tearoff=0)
 recent_menu = tk.Menu(file_menu, tearoff=0)
 
-if len(sys.argv) > 1:  # Check if command-line arguments were provided
-    file_path = sys.argv[1]  # Interpret the first command-line argument as the file path
-    with open(file_path, 'r') as file:
-        file_content = file.read()  # Read the content of the file
-    # Display the content of the file within your application
-    # For example, you can set the content of a text widget or display it in a suitable way
-    # Example:
-    text_area.insert('1.0', file_content)  # Assuming 'text_widget' is a Tkinter Text widget
-    root.title(f"Notepad by Vorlie - {file_path}")  # Update the window title to include the full file path
+# Function to trigger auto-save
+def trigger_auto_save():
+    auto_save(text_area, current_file)
+    root.after(300000, trigger_auto_save)
 
-# Load recent files from JSON
+if len(sys.argv) > 1:
+    file_path = sys.argv[1] 
+    with open(file_path, 'r') as file:
+        file_content = file.read()
+
+    text_area.insert('1.0', file_content)  
+    root.title(f"Notepad by Vorlie - {file_path}")  
+
+# Recent files menu items
 try:
     recent_files_path = os.path.join(app_data_dir, 'recent_files.json')
     with open(recent_files_path, 'r') as file:
@@ -146,7 +179,6 @@ try:
 except (FileNotFoundError, json.JSONDecodeError):
     recent_files_list = []
 
-# Add recent files to the recent menu
 for file_path in recent_files_list:
     if file_path.endswith('.txt') and os.path.exists(file_path):
         recent_menu.add_command(label=os.path.basename(file_path), command=lambda path=file_path: open_recent_file(path))
@@ -169,20 +201,17 @@ menu_bar.add_cascade(label="Zoom", menu=zoom_menu)
 # Configure the menu bar
 root.config(menu=menu_bar)
 
-# Bind the zoom_in function to the Ctrl++ key combination
+# Bind keyboard shortcuts
 root.bind("<Control-equal>", lambda event: zoom_in())
-# Bind the zoom_out function to the Ctrl+- key combination
 root.bind("<Control-minus>", lambda event: zoom_out())
-# Bind the toggle_dark_mode function to the Ctrl+D key combination
 root.bind("<Control-d>", lambda event: toggle_dark_mode())
-# Bind the open_file function to the Ctrl+O key combination
 root.bind("<Control-o>", lambda event: open_file())
-# Bind the save_file function to the Ctrl+S key combination
-root.bind("<Control-s>", lambda event: save_file())
-# Bind the save_as_file function to the Ctrl+Shift+S key combination
+root.bind('<Control-s>', save_file)
 root.bind("<Control-Shift-s>", lambda event: save_as_file())
-# Bind the create_new_document function to the Ctrl+N key combination
 root.bind("<Control-n>", lambda event: create_new_document())
+
+# Trigger auto-save
+root.after(300000, trigger_auto_save)
 
 # Start the main event loop
 root.mainloop()
