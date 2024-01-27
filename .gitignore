@@ -13,6 +13,6 @@ dist/
 
 # Other files
 setup.iss
-*.txt
+license.txt
 test.spec
 *.exe
