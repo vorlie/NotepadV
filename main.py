@@ -1,10 +1,13 @@
-import tkinter as tk
-from tkinter import filedialog
-from tkinter import font
-import tkinter.messagebox as messagebox
 import os
+import sys
 import json
 import appdirs
+import tkinter as tk
+import tkinter.messagebox as messagebox
+from tkinter import filedialog
+from tkinter import font
+
+
 
 recent_files_list = []
 current_file = ""
@@ -32,7 +35,6 @@ def open_recent_file(file_path):
     try:
         with open(file_path, 'r') as file:
             file_content = file.read()
-            # Add your code to display the file content in the text area
             text_area.delete(1.0, "end") # Clear the text area
             text_area.insert("end", file_content) # Insert the file content into the text area
             current_file = file_path
@@ -114,7 +116,8 @@ def create_new_document():
 root = tk.Tk()
 root.title("Notepad by Vorlie - Untitled")
 root.geometry("800x600")
-root.iconbitmap("icont.ico")
+icon_path = os.path.join(os.path.dirname(__file__), "icont.ico")
+root.iconbitmap(icon_path)
 # Create the text area
 default_font = font.Font(family="Montserrat", size=12)
 dark_mode_enabled = False
@@ -124,6 +127,16 @@ text_area.pack(fill="both", expand=True)
 menu_bar = tk.Menu(root)
 file_menu = tk.Menu(menu_bar, tearoff=0)
 recent_menu = tk.Menu(file_menu, tearoff=0)
+
+if len(sys.argv) > 1:  # Check if command-line arguments were provided
+    file_path = sys.argv[1]  # Interpret the first command-line argument as the file path
+    with open(file_path, 'r') as file:
+        file_content = file.read()  # Read the content of the file
+    # Display the content of the file within your application
+    # For example, you can set the content of a text widget or display it in a suitable way
+    # Example:
+    text_area.insert('1.0', file_content)  # Assuming 'text_widget' is a Tkinter Text widget
+    root.title(f"Notepad by Vorlie - {file_path}")  # Update the window title to include the full file path
 
 # Load recent files from JSON
 try:
