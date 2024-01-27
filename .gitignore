@@ -1,0 +1,18 @@
+# Icon files
+icon.jpg
+icon.psd
+
+# Recent files
+recent_files.json
+
+# Build files
+build/
+
+# Dist files
+dist/
+
+# Other files
+setup.iss
+*.txt
+test.spec
+*.exe
